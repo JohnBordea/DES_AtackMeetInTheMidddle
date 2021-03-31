@@ -97,6 +97,15 @@ int S[8][4][16] = { { { 14,  4, 13,  1,  2, 15, 11,  8,  3, 10,  6, 12,  5,  9, 
                   {  7, 11,  4,  1,  9, 12, 14,  2,  0,  6, 10, 13, 15,  3,  5,  8},
                   {  2,  1, 14,  7,  4, 10,  8, 13, 15, 12,  9,  0,  3,  5,  6, 11}} };
 
+int P[32] = { 16,  7, 20, 21,
+              29, 12, 28, 17,
+               1, 15, 23, 26,
+               5, 18, 31, 10,
+               2,  8, 24, 14,
+              32, 27,  3,  9,
+              19, 13, 30,  6,
+              22, 11,  4, 25 };
+
 void convertNumberToBinary(int number, int index, bool code[]) {
     code[index * 4 + 3] = number % 2;
     number >>= 1;
@@ -191,11 +200,14 @@ void DESencode(bool plaintext[], bool key[], bool cryptotext[]) {
 
     for (int i = 0; i < 8; i++)
         convertNumberToBinary(S[i][((ER[i * 6] << 1) + ER[i * 6 + 5])][(((((ER[i * 6 + 1] << 1) + ER[i * 6 + 2]) << 1) + ER[i * 6 + 3]) << 1) + ER[i * 6 + 4]], i, S_box);
+
+    for (int i = 0; i < 32; i++)
+        R[i] = S_box[P[i] - 1] ^ L_pred[i];
 }
 
 int main()
 {
-    string keyB = "010111001OOOOO101011010110010111";
+    string keyB = "11101111010010100110010101000100";
     string keyH = "133457799bbcdff1";
     string plainH = "0123456789abcdef";
 
@@ -206,5 +218,5 @@ int main()
 
     cout << keyB << endl;
     for (int i = 0; i < 32; i++)
-        cout << S_box[i];
+        cout << R[i];
 }
