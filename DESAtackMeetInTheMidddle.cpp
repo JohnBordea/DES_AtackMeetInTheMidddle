@@ -365,7 +365,7 @@ void attackMeetInTheMiddle(bool plaintext[], bool cryptotext[]) {
 
 int main()
 {
-    string keyB = "85E813540FOAB405";
+    /*string keyB = "85E813540FOAB405";
     string keyH = "133457799bbcdff1";
     string plainH = "0123456789abcdef";
 
@@ -393,10 +393,138 @@ int main()
 
         generateKeyForAttack(key, possibleKeys[i][1]);
         cout << "K2 :" << bitstringToString(key) << endl;
+    }*/
+
+    string text;
+
+    bool p[64];
+
+    int choice = 1;
+    int choiceDES;
+    bool encodedDES = 0;
+
+    while (choice) {
+        switch (choice) {
+        case 1:
+            cout << "1. Test DES\n2. Test Attack\n3. Exit\n";
+            do {
+                cin >> choice;
+            } while (choice <= 0 || choice > 3);
+            choice++;
+            if (choice == 4)
+                choice = 0;
+            else if (choice == 2) {
+                convertStringHexToBinary("0123456789abcdef", plaintext);
+                convertStringHexToBinary("133457799bbcdff1", key);
+                encodedDES = 0;
+            }
+            else if (choice == 3) {
+                convertStringHexToBinary("0123456789abcdef", plaintext);
+                //Default K1 and K2
+                convertStringHexToBinary("3b", K1, 1);
+                repeatPatern(K1, 8, 8);
+
+                convertStringHexToBinary("09", K2, 1);
+                repeatPatern(K2, 8, 8);
+            }
+
+            break;
+        case 2:
+            cout << "1. Input Plaintext\n2. Input Key\n3. Encode\n";
+            cout << "4. ";
+            if (!encodedDES)
+                cout << "[Blocked]";
+            cout << "Decode\n5. Back\n";
+            do {
+                cin >> choiceDES;
+                if (choiceDES == 4 && !encodedDES)
+                    choiceDES = -1;
+            } while (choiceDES <= 0 || choiceDES > 5);
+
+            switch (choiceDES) {
+            case 1:
+                cout << "Input new plaintext\n";
+                cin >> text;
+                convertStringHexToBinary(text, plaintext);
+                break;
+            case 2:
+                cout << "Input new key\n";
+                cin >> text;
+                convertStringHexToBinary(text, key);
+                break;
+            case 3:
+                cout << "The generated cryptotext\n";
+                encodeDES(plaintext, key, cryptotext);
+                cout << bitstringToString(cryptotext) << endl;
+                encodedDES = 1;
+                break;
+            case 4:
+                cout << "The decoded cryptotext\n";
+                decodeDES(cryptotext, key, plaintext);
+                cout << bitstringToString(plaintext) << endl;
+                break;
+            case 5:
+                choice = 1;
+                break;
+            }
+            break;
+        case 3:
+            cout << "1. Input K1\n2. Input K2\n3. Input Plaintext\n4. Implement Attack\n5. Show keys\n6. Back\n";
+            do {
+                cin >> choiceDES;
+            } while (choiceDES <= 0 || choiceDES > 6);
+
+            switch (choiceDES) {
+            case 1:
+                cout << "Input new K1\n";
+                cin >> text;
+                if (text.size() == 2) {
+                    convertStringHexToBinary(text, K1, 1);
+                    K1[7] = 1;
+                    repeatPatern(K1, 8, 8);
+                }   
+                break;
+            case 2:
+                cout << "Input new K2\n";
+                cin >> text;
+                if (text.size() == 2) {
+                    convertStringHexToBinary(text, K2, 1);
+                    K2[7] = 1;
+                    repeatPatern(K2, 8, 8);
+                }
+                break;
+            case 3:
+                cout << "Input new plaintext\n";
+                cin >> text;
+                convertStringHexToBinary(text, plaintext);
+                break;
+            case 4:
+                encodeDES(plaintext, K1, p);
+                encodeDES(p, K2, cryptotext);
+
+                attackMeetInTheMiddle(plaintext, cryptotext);
+
+                cout << "Possible keys" << endl;
+
+                for (int i = 0; i < amountOfPossibleKeys; i++) {
+                    generateKeyForAttack(key, possibleKeys[i][0]);
+                    cout << "K1 :" << bitstringToString(key) << endl;
+
+                    generateKeyForAttack(key, possibleKeys[i][1]);
+                    cout << "K2 :" << bitstringToString(key) << endl << endl;
+                }
+
+                break;
+            case 5:
+                cout << "K1 :" << bitstringToString(K1) << endl;
+                cout << "K2 :" << bitstringToString(K2) << endl << endl;
+                break;
+            case 6:
+                choice = 1;
+                break;
+            }
+
+            break;
+        }
     }
-
-    /*decodeDES(cryptotext, K2, p);
-    decodeDES(p, K1, plaintext);
-
-    cout << bitstringToString(plaintext);*/
 }
