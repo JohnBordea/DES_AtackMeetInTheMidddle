@@ -143,7 +143,7 @@ void createC0D0(bool CD[]) {
         CD[i] = key[PC1[i] - 1];
 }
 
-void shiftCD(bool CD[], int i) {
+void shiftLeftCD(bool CD[], int i) {
     bool b1, b2;
     if (i == 1 || i == 2 || i == 9 || i == 16) {
         b1 = CD[0];
@@ -161,7 +161,7 @@ void shiftCD(bool CD[], int i) {
         b2 = CD[1];
         for (int i = 0; i < 26; i++)
             CD[i] = CD[i + 2];
-        CD[26] = b1; 
+        CD[26] = b1;
         CD[27] = b2;
 
         b1 = CD[28];
@@ -170,6 +170,36 @@ void shiftCD(bool CD[], int i) {
             CD[i] = CD[i + 2];
         CD[54] = b1;
         CD[55] = b2;
+    }
+}
+
+void shiftRightCD(bool CD[], int i) {
+    bool b1, b2;
+    if (i == 1 || i == 2 || i == 9 || i == 16) {
+        b1 = CD[27];
+        for (int i = 27; i > 0; i--)
+            CD[i] = CD[i - 1];
+        CD[0] = b1;
+
+        b1 = CD[55];
+        for (int i = 55; i > 28; i--)
+            CD[i] = CD[i - 1];
+        CD[28] = b1;
+    }
+    else {
+        b1 = CD[26];
+        b2 = CD[27];
+        for (int i = 27; i > 1; i--)
+            CD[i] = CD[i - 2];
+        CD[0] = b1;
+        CD[1] = b1;
+
+        b1 = CD[54];
+        b2 = CD[55];
+        for (int i = 55; i > 29; i--)
+            CD[i] = CD[i - 2];
+        CD[28] = b1;
+        CD[29] = b2;
     }
 }
 
@@ -183,7 +213,7 @@ void copyFromTo(bool from[], bool to[], int length) {
         to[i] = from[i];
 }
 
-void DESencode(bool plaintext[], bool key[], bool cryptotext[]) {
+void encodeDES(bool plaintext[], bool key[], bool cryptotext[]) {
     createC0D0(CD);
 
     for (int i = 0; i < 64; i++)
@@ -202,7 +232,49 @@ void DESencode(bool plaintext[], bool key[], bool cryptotext[]) {
         //L_i
         copyFromTo(R_pred, L, 32);
 
-        shiftCD(CD, i);
+        shiftLeftCD(CD, i);
+
+        createK_i(K, CD);
+
+        for (int j = 0; j < 48; j++)
+            ER[j] = R_pred[E[j] - 1] ^ K[j];
+
+        for (int j = 0; j < 8; j++)
+            convertNumberToBinary(S[j][((ER[j * 6] << 1) + ER[j * 6 + 5])][(((((ER[j * 6 + 1] << 1) + ER[j * 6 + 2]) << 1) + ER[j * 6 + 3]) << 1) + ER[j * 6 + 4]], j, S_box);
+
+        for (int j = 0; j < 32; j++)
+            R[j] = S_box[P[j] - 1] ^ L_pred[j];
+    }
+    
+    for (int i = 0; i < 32; i++)
+        LR[i] = R[i];
+    for (int i = 32; i < 64; i++)
+        LR[i] = L[i - 32];
+
+    for (int i = 0; i < 64; i++)
+        cryptotext[i] = LR[IPinvers[i] - 1];
+}
+
+void decodeDES(bool cryptotext[], bool key[], bool plaintext[]) {
+    for (int i = 0; i < 64; i++)
+        LR[i] = cryptotext[IP[i] - 1];
+
+    for (int i = 0; i < 32; i++)
+        L[i] = LR[i];
+    for (int i = 32; i < 64; i++)
+        R[i - 32] = LR[i];
+
+    for (int i = 16; i >= 1; i--) {
+        //L_i-1 R_i-1
+        copyFromTo(R, R_pred, 32);
+        copyFromTo(L, L_pred, 32);
+
+        //L_i
+        copyFromTo(R_pred, L, 32);
+
+        createC0D0(CD);
+        for (int j = 1; j <= i; j++)
+            shiftLeftCD(CD, j);
 
         createK_i(K, CD);
 
@@ -215,14 +287,14 @@ void DESencode(bool plaintext[], bool key[], bool cryptotext[]) {
         for (int i = 0; i < 32; i++)
             R[i] = S_box[P[i] - 1] ^ L_pred[i];
     }
-    
+
     for (int i = 0; i < 32; i++)
         LR[i] = R[i];
     for (int i = 32; i < 64; i++)
         LR[i] = L[i - 32];
 
     for (int i = 0; i < 64; i++)
-        cryptotext[i] = LR[IPinvers[i] - 1];
+        plaintext[i] = LR[IPinvers[i] - 1];
 }
 
 string bitstringToString(bool bit[]) {
@@ -253,8 +325,12 @@ int main()
     convertStringHexToBinary(keyH, key);
     convertStringHexToBinary(plainH, plaintext);
 
-    DESencode(plaintext, key, cryptotext);
+    encodeDES(plaintext, key, cryptotext);
 
-    cout << keyB << endl << bitstringToString(cryptotext);
+    cout << keyB << endl << bitstringToString(cryptotext) << endl;
+
+    decodeDES(cryptotext, key, plaintext);
+
+    cout << plainH << endl << bitstringToString(plaintext);
     
 }
