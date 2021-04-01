@@ -159,7 +159,14 @@ string bitstringToString(bool bit[]) {
     return text;
 }
 
-void createC0D0(bool CD[]) {
+void repeatPatern(bool target[], int targetLength, int times) {
+    for (int i = 1; i < times; i++) {
+        for (int j = 0; j < targetLength; j++)
+            target[i * targetLength + j] = target[j];
+    }
+}
+
+void createC0D0(bool CD[], bool key[]) {
     for (int i = 0; i < 56; i++)
         CD[i] = key[PC1[i] - 1];
 }
@@ -235,7 +242,7 @@ void copyFromTo(bool from[], bool to[], int length) {
 }
 
 void encodeDES(bool plaintext[], bool key[], bool cryptotext[]) {
-    createC0D0(CD);
+    createC0D0(CD, key);
 
     for (int i = 0; i < 64; i++)
         LR[i] = plaintext[IP[i] - 1];
@@ -293,7 +300,7 @@ void decodeDES(bool cryptotext[], bool key[], bool plaintext[]) {
         //L_i
         copyFromTo(R_pred, L, 32);
 
-        createC0D0(CD);
+        createC0D0(CD, key);
         for (int j = 1; j <= i; j++)
             shiftLeftCD(CD, j);
 
@@ -324,11 +331,34 @@ int main()
     string keyH = "133457799bbcdff1";
     string plainH = "0123456789abcdef";
 
-    int i = 1;
-    int j = 0;
-    do {
-        i <<= 1;
-        cout << i << endl;
-        j++;
-    } while (j < 8);
+    //Generate K1 and K2
+    convertStringHexToBinary("3b", K1, 1);
+    repeatPatern(K1, 8, 8);
+
+    convertStringHexToBinary("09", K2, 1);
+    repeatPatern(K2, 8, 8);
+
+    convertStringHexToBinary(plainH, plaintext);
+    convertStringHexToBinary(keyH, key);
+
+    bool p[64];
+
+    encodeDES(plaintext, key, p);
+    cout << bitstringToString(p) << endl;
+    encodeDES(p, key, cryptotext);
+    cout << bitstringToString(cryptotext) << endl;
+    decodeDES(cryptotext, key, p);
+    decodeDES(p, key, plaintext);
+    cout << bitstringToString(plaintext);
+
+
+    encodeDES(plaintext, K1, p);
+    encodeDES(p, K2, cryptotext);
+
+    cout << bitstringToString(cryptotext) << endl;
+
+    decodeDES(cryptotext, K2, p);
+    decodeDES(p, K1, plaintext);
+
+    cout << bitstringToString(plaintext);
 }
