@@ -20,6 +20,8 @@ bool K[48];
 
 bool cryptotext[64];
 
+bool K1[64], K2[64];
+
 int PC1[56] = { 57, 49, 41, 33, 25, 17,  9,
                  1, 58, 50, 42, 34, 26, 18,
                 10,  2, 59, 51, 43, 35, 27,
@@ -125,8 +127,8 @@ void convertNumberToBinary(int number, int index, bool code[]) {
     code[index * 4] = number % 2;
 }
 
-void convertStringHexToBinary(string s, bool code[]) {
-    if (s.size() != 16)
+void convertStringHexToBinary(string s, bool code[], bool ignoreLength = false) {
+    if (s.size() != 16 && !ignoreLength)
         return;
     for (int i = 0; i < s.size(); i++)
         if (!(s[i] >= '0' && s[i] <= '9') && !(s[i] >= 'a' && s[i] <= 'f'))
@@ -136,6 +138,25 @@ void convertStringHexToBinary(string s, bool code[]) {
             convertNumberToBinary(s[i] - '0', i, code);
         else
             convertNumberToBinary(s[i] - 'a' + 10, i, code);
+}
+
+string bitstringToString(bool bit[]) {
+    string text;
+    int nr = 0;
+    for (int i = 0; i < 16; i++) {
+        nr = 0;
+        for (int j = 0; j < 4; j++) {
+            nr <<= 1;
+            nr += bit[i * 4 + j];
+        }
+        text += "-";
+        if (nr >= 0 && nr <= 9)
+            text[i] = '0' + nr;
+        else
+            text[i] = 'a' + nr - 10;
+    }
+
+    return text;
 }
 
 void createC0D0(bool CD[]) {
@@ -297,40 +318,17 @@ void decodeDES(bool cryptotext[], bool key[], bool plaintext[]) {
         plaintext[i] = LR[IPinvers[i] - 1];
 }
 
-string bitstringToString(bool bit[]) {
-    string text;
-    int nr = 0;
-    for (int i = 0; i < 16; i++) {
-        nr = 0;
-        for (int j = 0; j < 4; j++) {
-            nr <<= 1;
-            nr += bit[i * 4 + j];
-        }
-        text += "-";
-        if (nr >= 0 && nr <= 9)
-            text[i] = '0' + nr;
-        else
-            text[i] = 'A' + nr - 10;
-    }
-
-    return text;
-}
-
 int main()
 {
     string keyB = "85E813540FOAB405";
     string keyH = "133457799bbcdff1";
     string plainH = "0123456789abcdef";
 
-    convertStringHexToBinary(keyH, key);
-    convertStringHexToBinary(plainH, plaintext);
-
-    encodeDES(plaintext, key, cryptotext);
-
-    cout << keyB << endl << bitstringToString(cryptotext) << endl;
-
-    decodeDES(cryptotext, key, plaintext);
-
-    cout << plainH << endl << bitstringToString(plaintext);
-    
+    int i = 1;
+    int j = 0;
+    do {
+        i <<= 1;
+        cout << i << endl;
+        j++;
+    } while (j < 8);
 }
