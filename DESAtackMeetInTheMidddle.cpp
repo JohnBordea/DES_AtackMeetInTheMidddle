@@ -4,23 +4,23 @@
 using namespace std;
 
 bool plaintext[64];
-
 bool LR[64];
 bool L[32], L_pred[32];
 bool R[32], R_pred[32];
 bool ER[48];
 bool S_box[32];
 
-
 bool key[64];
-
 bool CD[56];
 bool K[48];
-
 
 bool cryptotext[64];
 
 bool K1[64], K2[64];
+
+bool allPossibleKeys[128][64];
+int possibleKeys[64][2], amountOfPossibleKeys;
+bool possibleMatch[64];
 
 int PC1[56] = { 57, 49, 41, 33, 25, 17,  9,
                  1, 58, 50, 42, 34, 26, 18,
@@ -325,6 +325,44 @@ void decodeDES(bool cryptotext[], bool key[], bool plaintext[]) {
         plaintext[i] = LR[IPinvers[i] - 1];
 }
 
+void generateKeyForAttack(bool Key[64], int nr) {
+    Key[7] = 1;
+    for (int i = 6; i >= 0; i--) {
+        Key[i] = (nr % 2);
+        nr /= 2;
+    }
+    repeatPatern(Key, 8, 8);
+}
+
+bool equalBitstrings(bool s1[64], bool s2[64]) {
+    for (int i = 0; i < 64; i++)
+        if (s1[i] != s2[i])
+            return 0;
+
+    return 1;
+}
+
+void attackMeetInTheMiddle(bool plaintext[], bool cryptotext[]) {
+    //Generate Encryptions
+    for (int i = 0; i < 128; i++) {
+        generateKeyForAttack(key, i);
+        encodeDES(plaintext, key, allPossibleKeys[i]);
+    }
+
+    //Find Matches
+    for (int i = 0; i < 128; i++) {
+        generateKeyForAttack(key, i);
+        decodeDES(cryptotext, key, possibleMatch);
+        for(int j=0;j<128;j++)
+            if (equalBitstrings(possibleMatch, allPossibleKeys[j])) {
+                possibleKeys[amountOfPossibleKeys][0] = j;
+                possibleKeys[amountOfPossibleKeys][1] = i;
+                amountOfPossibleKeys++;
+            }
+    }
+    
+}
+
 int main()
 {
     string keyB = "85E813540FOAB405";
@@ -339,26 +377,26 @@ int main()
     repeatPatern(K2, 8, 8);
 
     convertStringHexToBinary(plainH, plaintext);
-    convertStringHexToBinary(keyH, key);
 
     bool p[64];
-
-    encodeDES(plaintext, key, p);
-    cout << bitstringToString(p) << endl;
-    encodeDES(p, key, cryptotext);
-    cout << bitstringToString(cryptotext) << endl;
-    decodeDES(cryptotext, key, p);
-    decodeDES(p, key, plaintext);
-    cout << bitstringToString(plaintext);
-
 
     encodeDES(plaintext, K1, p);
     encodeDES(p, K2, cryptotext);
 
-    cout << bitstringToString(cryptotext) << endl;
+    attackMeetInTheMiddle(plaintext, cryptotext);
 
-    decodeDES(cryptotext, K2, p);
+    cout << amountOfPossibleKeys << endl;
+
+    for (int i = 0; i < amountOfPossibleKeys; i++) {
+        generateKeyForAttack(key, possibleKeys[i][0]);
+        cout << "K1 :" << bitstringToString(key) << endl;
+
+        generateKeyForAttack(key, possibleKeys[i][1]);
+        cout << "K2 :" << bitstringToString(key) << endl;
+    }
+
+    /*decodeDES(cryptotext, K2, p);
     decodeDES(p, K1, plaintext);
 
-    cout << bitstringToString(plaintext);
+    cout << bitstringToString(plaintext);*/
 }
